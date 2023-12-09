@@ -26,65 +26,46 @@ const calculateSawingTime = (height, quantity, requestedLength) => {
   const cuttime3 = (sumHeigth / 40) * 60 + sawUpCycle;
   const cuttime4 = (sumHeigth / 30) * 60 + sawUpCycle;
 
+  const {
+    regio1: a,
+    regio2: b,
+    regio3: c,
+    regio4: d,
+  } = {
+    regio1: cuttime1 * warmUp + cuttime1 * (quantity - 1),
+    regio2: cuttime2 * warmUp + cuttime2 * (quantity - 1),
+    regio3: cuttime3 * warmUp + cuttime3 * (quantity - 1),
+    regio4: cuttime4 * warmUp + cuttime4 * (quantity - 1),
+  };
+
   let sawingTime;
+
+  const checkHeight = () => {
+    if (height <= 200) {
+      sawingTime = a;
+    } else if (height <= 250) {
+      sawingTime = b;
+    } else if (height <= 300) {
+      sawingTime = c;
+    } else {
+      sawingTime = d;
+    }
+    return sawingTime;
+  };
+
   // statement under qty 2
   if (quantity <= 2) {
-    if (height <= 200) {
-      sawingTime = cuttime1 * warmUp + cuttime1 * (quantity - 1);
-    } else if (height <= 250) {
-      sawingTime = cuttime2 * warmUp + cuttime2 * (quantity - 1);
-    } else if (height <= 300) {
-      sawingTime = cuttime3 * warmUp + cuttime3 * (quantity - 1);
-    } else {
-      sawingTime = cuttime4 * warmUp + cuttime4 * (quantity - 1);
-    }
+    checkHeight();
 
     // statement above qty 2 and length till 500mm
   } else if (quantity > 2 && requestedLength <= 500) {
-    if (height <= 200) {
-      sawingTime =
-        cuttime1 * warmUp +
-        cuttime1 * (quantity - 1) +
-        additionalClampTimeUnder500;
-    } else if (height <= 250) {
-      sawingTime =
-        cuttime2 * warmUp +
-        cuttime2 * (quantity - 1) +
-        additionalClampTimeUnder500;
-    } else if (height <= 300) {
-      sawingTime =
-        cuttime3 * warmUp +
-        cuttime3 * (quantity - 1) +
-        additionalClampTimeUnder500;
-    } else {
-      sawingTime =
-        cuttime4 * warmUp +
-        cuttime4 * (quantity - 1) +
-        additionalClampTimeUnder500;
-    }
+    checkHeight();
+    sawingTime += additionalClampTimeUnder500;
+
     // statement above qty 2 and length above 500mm
   } else if (quantity > 2 && requestedLength > 500) {
-    if (height <= 200) {
-      sawingTime =
-        cuttime1 * warmUp +
-        cuttime1 * (quantity - 1) +
-        additionalClampTimeAbove500;
-    } else if (height <= 250) {
-      sawingTime =
-        cuttime2 * warmUp +
-        cuttime2 * (quantity - 1) +
-        additionalClampTimeAbove500;
-    } else if (height <= 300) {
-      sawingTime =
-        cuttime3 * warmUp +
-        cuttime3 * (quantity - 1) +
-        additionalClampTimeAbove500;
-    } else {
-      sawingTime =
-        cuttime4 * warmUp +
-        cuttime4 * (quantity - 1) +
-        additionalClampTimeAbove500;
-    }
+    checkHeight();
+    sawingTime += additionalClampTimeAbove500;
   }
 
   return sawingTime;
@@ -114,6 +95,9 @@ calculateButton.addEventListener("click", function () {
 
   if (isNaN(height) || isNaN(quantity) || isNaN(requestedLength)) {
     output.textContent = "Please enter valid numeric values.";
+  }
+  if (requestedLength > 3700) {
+    output.textContent = "The maximum length is 3700mm";
   } else {
     const sawingTime = calculateSawingTime(height, quantity, requestedLength);
     const { minutes, seconds } = displaySawingTime(sawingTime);
