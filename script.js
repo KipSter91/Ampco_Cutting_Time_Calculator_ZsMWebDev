@@ -97,7 +97,7 @@ document.getElementById("calculateButton").addEventListener("click", () => {
   // Validate input values
   const values = Object.values(inputs).map((input) => parseFloat(input.value));
   console.log(values);
-  if (values.some(isNaN) || requestedLength.value > 3700) {
+  if (values.some(isNaN) || values.some((value) => value === 0) || requestedLength.value > 3700) {
     output.textContent =
       "Please enter valid numeric values and ensure the requested length is not greater than 3700mm.";
     return;
