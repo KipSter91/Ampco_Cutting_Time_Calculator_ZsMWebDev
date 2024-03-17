@@ -1,16 +1,20 @@
+"use strict";
 // Dynamically set the current year in the copyright footer
 const currentYear = new Date().getFullYear();
 document.getElementById("copyright-year").textContent = currentYear;
 
+const cuttingParams = {
+  mmAbove: 10, // mm
+  mmBelow: 5, // mm
+  warmUp: 1.1, // additional 10%
+  sawUpSpeed: 40, // mm/min
+  machineClampSpeed: 70, // mm/min
+};
+
 // Function to calculate sawing time
 const calculateSawingTime = (height, quantity, requestedLength) => {
-  //cutting element/factors
-  const mmAbove = 10; // mm
-  const mmBelow = 5; // mm
-  const warmUp = 1.1; // additional 10%
-  const sawUpSpeed = 40; // mm/s
-  const machineClampSpeed = 70; // mm/s
-
+  const { mmAbove, mmBelow, warmUp, sawUpSpeed, machineClampSpeed } =
+    cuttingParams;
   //additional calculating elements/factors
   const sumHeigth = height + mmAbove + mmBelow;
   const sawUpCycle = height / sawUpSpeed;
@@ -26,45 +30,43 @@ const calculateSawingTime = (height, quantity, requestedLength) => {
   const cuttime3 = (sumHeigth / 40) * 60 + sawUpCycle;
   const cuttime4 = (sumHeigth / 30) * 60 + sawUpCycle;
 
+  const regions = [
+    { name: "regio1", time: cuttime1 },
+    { name: "regio2", time: cuttime2 },
+    { name: "regio3", time: cuttime3 },
+    { name: "regio4", time: cuttime4 },
+  ];
+
   const {
     regio1: a,
     regio2: b,
     regio3: c,
     regio4: d,
-  } = {
-    regio1: cuttime1 * warmUp + cuttime1 * (quantity - 1),
-    regio2: cuttime2 * warmUp + cuttime2 * (quantity - 1),
-    regio3: cuttime3 * warmUp + cuttime3 * (quantity - 1),
-    regio4: cuttime4 * warmUp + cuttime4 * (quantity - 1),
-  };
+  } = regions.reduce((acc, { name, time }) => {
+    acc[name] = time * warmUp + time * (quantity - 1);
+    return acc;
+  }, {});
 
   let sawingTime;
 
-  const checkHeight = () => {
-    if (height <= 200) {
+  switch (true) {
+    case height <= 200:
       sawingTime = a;
-    } else if (height <= 250) {
+      break;
+    case height <= 250:
       sawingTime = b;
-    } else if (height <= 300) {
+      break;
+    case height <= 300:
       sawingTime = c;
-    } else {
+      break;
+    default:
       sawingTime = d;
-    }
-    return sawingTime;
-  };
-
-  // statement under qty 2
-  if (quantity <= 2) {
-    checkHeight();
-
-    // statement above qty 2 and length till 500mm
-  } else if (quantity > 2 && requestedLength <= 500) {
-    checkHeight();
+  }
+  if (quantity > 2 && requestedLength <= 500) {
     sawingTime += additionalClampTimeUnder500;
 
     // statement above qty 2 and length above 500mm
   } else if (quantity > 2 && requestedLength > 500) {
-    checkHeight();
     sawingTime += additionalClampTimeAbove500;
   }
 
@@ -78,29 +80,31 @@ function displaySawingTime(sawingTime) {
   return { minutes, seconds };
 }
 
-// input from UI
-const heightInput = document.getElementById("height");
-const quantityInput = document.getElementById("quantity");
-const requestedLengthInput = document.getElementById("requestedLength");
-const calculateButton = document.getElementById("calculateButton");
+// Input elements
+const inputs = {
+  height: document.getElementById("height"),
+  quantity: document.getElementById("quantity"),
+  requestedLength: document.getElementById("requestedLength"),
+};
 
-// output text to UI
+// Output element
 const output = document.getElementById("output");
 
-// button action
-calculateButton.addEventListener("click", function () {
-  const height = parseFloat(heightInput.value);
-  const quantity = parseFloat(quantityInput.value);
-  const requestedLength = parseFloat(requestedLengthInput.value);
+// Button action
+document.getElementById("calculateButton").addEventListener("click", () => {
+  const { height, quantity, requestedLength } = inputs;
 
-  if (isNaN(height) || isNaN(quantity) || isNaN(requestedLength)) {
-    output.textContent = "Please enter valid numeric values.";
+  // Validate input values
+  const values = Object.values(inputs).map((input) => parseFloat(input.value));
+  console.log(values);
+  if (values.some(isNaN) || requestedLength.value > 3700) {
+    output.textContent =
+      "Please enter valid numeric values and ensure the requested length is not greater than 3700mm.";
+    return;
   }
-  if (requestedLength > 3700) {
-    output.textContent = "The maximum length is 3700mm";
-  } else {
-    const sawingTime = calculateSawingTime(height, quantity, requestedLength);
-    const { minutes, seconds } = displaySawingTime(sawingTime);
-    output.textContent = `Sawing Time: ${minutes} min ${seconds} sec`;
-  }
+
+  // Calculate and display sawing time
+  const sawingTime = calculateSawingTime(...values);
+  const { minutes, seconds } = displaySawingTime(sawingTime);
+  output.textContent = `Sawing Time: ${minutes} min ${seconds} sec`;
 });
