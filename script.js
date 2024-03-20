@@ -7,8 +7,9 @@ const cuttingParams = {
   mmAbove: 10, // mm
   mmBelow: 5, // mm
   warmUp: 1.1, // additional 10%
-  sawUpSpeed: 40, // mm/min
-  machineClampSpeed: 70, // mm/min
+  sawUpSpeed: 40, // mm/s
+  machineClampSpeed: 70, // mm/s
+  fooding: [30, 40, 60, 70]
 };
 
 // Function to calculate sawing time
@@ -20,47 +21,32 @@ const calculateSawingTime = (height, quantity, requestedLength) => {
   const sawUpCycle = height / sawUpSpeed;
   const additionalClampTimeUnder500 =
     (quantity - 1) * (2 * (requestedLength / machineClampSpeed));
+
   const additionalClampTimeAbove500 =
     (quantity - 1) *
     ((requestedLength / 500) * 2 * (requestedLength / machineClampSpeed));
 
-  //different standard cutting formulas related to diameter
-  const cuttime1 = (sumHeigth / 70) * 60 + sawUpCycle;
-  const cuttime2 = (sumHeigth / 60) * 60 + sawUpCycle;
-  const cuttime3 = (sumHeigth / 40) * 60 + sawUpCycle;
-  const cuttime4 = (sumHeigth / 30) * 60 + sawUpCycle;
+  cuttingParams.fooding.sort((a, b) => b - a);
 
-  const regions = [
-    { name: "regio1", time: cuttime1 },
-    { name: "regio2", time: cuttime2 },
-    { name: "regio3", time: cuttime3 },
-    { name: "regio4", time: cuttime4 },
-  ];
-
-  const {
-    regio1: a,
-    regio2: b,
-    regio3: c,
-    regio4: d,
-  } = regions.reduce((acc, { name, time }) => {
-    acc[name] = time * warmUp + time * (quantity - 1);
-    return acc;
-  }, {});
+  const [feedA, feedB, feedC, feedD] = cuttingParams.fooding.map((value) => {
+    return (quantity * ((sumHeigth / value) * 60 + sawUpCycle)) * warmUp;
+  });
+  console.log(feedA, feedB, feedC, feedD);
 
   let sawingTime;
 
   switch (true) {
     case height <= 200:
-      sawingTime = a;
+      sawingTime = feedA;
       break;
     case height <= 250:
-      sawingTime = b;
+      sawingTime = feedB;
       break;
     case height <= 300:
-      sawingTime = c;
+      sawingTime = feedC;
       break;
     default:
-      sawingTime = d;
+      sawingTime = feedD;
   }
   if (quantity > 2 && requestedLength <= 500) {
     sawingTime += additionalClampTimeUnder500;
@@ -69,7 +55,8 @@ const calculateSawingTime = (height, quantity, requestedLength) => {
   } else if (quantity > 2 && requestedLength > 500) {
     sawingTime += additionalClampTimeAbove500;
   }
-
+  console.log(feedA, feedB, feedC, feedD);
+  console.log(additionalClampTimeUnder500, additionalClampTimeAbove500);
   return sawingTime;
 };
 
